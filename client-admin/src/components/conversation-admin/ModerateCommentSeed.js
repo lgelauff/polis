@@ -12,9 +12,16 @@ import {
   seedCommentChanged
 } from '../../actions'
 
+const SEED_MAX_LENGTH = 400
+const MULTIPLE_STATEMENT_HINT_LENGTH = 250
+
 const ModerateCommentsSeed = ({ params }) => {
   const dispatch = useDispatch()
   const { seedText, loading, success, error } = useSelector((state) => state.seed_comments)
+
+  const text = seedText || ''
+  const nonEmptyLines = text.split('\n').filter((line) => line.trim().length > 0).length
+  const looksLikeMultiple = nonEmptyLines > 1 || text.length > MULTIPLE_STATEMENT_HINT_LENGTH
 
   const [csvText, setCsvText] = useState(undefined)
   const seedFormRef = useRef(null)
@@ -99,11 +106,26 @@ const ModerateCommentsSeed = ({ params }) => {
                 borderColor: 'mediumGray'
               }}
               onChange={handleTextareaChange}
-              maxLength="400"
+              maxLength={SEED_MAX_LENGTH}
               data-testid="seed_form"
               value={seedText}
               ref={seedFormRef}
             />
+          </Box>
+          <Box sx={{ mb: [2] }}>
+            <Text
+              sx={{ fontSize: [1], color: 'mediumGray', display: 'block' }}
+              data-testid="seed_char_count">
+              {text.length}/{SEED_MAX_LENGTH}
+            </Text>
+            {looksLikeMultiple && (
+              <Text
+                sx={{ fontSize: [1], display: 'block', mt: [1] }}
+                data-testid="seed_multiple_hint">
+                This looks like more than one statement. Seed comments are submitted one at a time.
+                To add several at once, use the CSV upload below.
+              </Text>
+            )}
           </Box>
           <Box>
             <Button onClick={handleSubmitSeed}>{getButtonText()}</Button>

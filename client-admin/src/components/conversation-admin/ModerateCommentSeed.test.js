@@ -388,4 +388,49 @@ describe('ModerateCommentsSeed', () => {
       expect(screen.getAllByText('Success!').length).toBeGreaterThan(0)
     })
   })
+
+  describe('Multiple-statement warning', () => {
+    it('shows a live character count', () => {
+      const store = createMockStore({ seedText: 'Twelve chars' })
+      renderWithProviders(<ModerateCommentsSeed {...defaultProps} />, { store })
+      expect(screen.getByTestId('seed_char_count')).toHaveTextContent('12/400')
+    })
+
+    it('shows no warning for an ordinary single-line statement', () => {
+      const store = createMockStore({ seedText: 'A single ordinary statement' })
+      renderWithProviders(<ModerateCommentsSeed {...defaultProps} />, { store })
+      expect(screen.queryByTestId('seed_multiple_hint')).not.toBeInTheDocument()
+    })
+
+    it('warns and points at the CSV upload when the text contains a linebreak', () => {
+      const store = createMockStore({ seedText: 'First statement\nSecond statement' })
+      renderWithProviders(<ModerateCommentsSeed {...defaultProps} />, { store })
+      expect(screen.getByTestId('seed_multiple_hint')).toHaveTextContent(/CSV upload below/)
+    })
+
+    it('ignores trailing blank lines when deciding whether to warn', () => {
+      const store = createMockStore({ seedText: 'One statement\n\n' })
+      renderWithProviders(<ModerateCommentsSeed {...defaultProps} />, { store })
+      expect(screen.queryByTestId('seed_multiple_hint')).not.toBeInTheDocument()
+    })
+
+    it('warns when a single line runs past 250 characters', () => {
+      const store = createMockStore({ seedText: 'x'.repeat(251) })
+      renderWithProviders(<ModerateCommentsSeed {...defaultProps} />, { store })
+      expect(screen.getByTestId('seed_multiple_hint')).toBeInTheDocument()
+    })
+
+    it('does not warn at exactly 250 characters', () => {
+      const store = createMockStore({ seedText: 'x'.repeat(250) })
+      renderWithProviders(<ModerateCommentsSeed {...defaultProps} />, { store })
+      expect(screen.queryByTestId('seed_multiple_hint')).not.toBeInTheDocument()
+    })
+
+    it('does not block submission when the warning is showing', () => {
+      const store = createMockStore({ seedText: 'First statement\nSecond statement' })
+      renderWithProviders(<ModerateCommentsSeed {...defaultProps} />, { store })
+      expect(screen.getByTestId('seed_multiple_hint')).toBeInTheDocument()
+      expect(screen.getAllByText('Submit')[0]).not.toBeDisabled()
+    })
+  })
 })
